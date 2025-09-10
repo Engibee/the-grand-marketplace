@@ -4,9 +4,9 @@ services:
     container_name: osrs_db
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 12345600
-      POSTGRES_DB: osrs_market
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: ${PG_DATABASE:-osrs_market}
     volumes:
       - db_data:/var/lib/postgresql/data
     # ports:
@@ -26,14 +26,14 @@ services:
     restart: always
     environment:
       # Database configuration for Docker
-      PG_USER: postgres
-      PG_PASSWORD: 12345600
+      PG_USER: ${PG_USER:-postgres}
+      PG_PASSWORD: ${PG_PASSWORD}
       PG_HOST: db
-      PG_PORT: 5432
-      PG_DATABASE: osrs_market
+      PG_PORT: ${PG_PORT:-5432}
+      PG_DATABASE: ${PG_DATABASE:-osrs_market}
       # Backend configuration
-      BACKEND_PORT: 3001
-      FRONTEND_PORT: 5173
+      BACKEND_PORT: ${BACKEND_PORT:-3001}
+      FRONTEND_PORT: ${FRONTEND_PORT:-5173}
       NODE_ENV: production
     ports:
       - "3001:3001"  # API accessible externally

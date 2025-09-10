@@ -11,7 +11,10 @@ A full-stack application for tracking Old School RuneScape item prices and findi
 ### Setup
 1. **Clone the repository** (or download the project)
 2. **Copy environment file**: `cp .env.example .env`
-3. **Edit .env file** and set your database password
+3. **Edit .env file** and set your database password (required!)
+4. **Start the application**: `docker-compose up -d`
+
+**⚠️ Important:** The `.env` file is required as it contains your database password. Docker Compose will read these environment variables.
 
 ### Core Commands
 
