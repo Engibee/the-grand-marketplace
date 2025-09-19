@@ -13,9 +13,8 @@ function MarketplaceView() {
 
     const fetchItems = async () => {
       try {
-        const backendUrl = `${__API_URL__}`;
         const res = await fetch(
-          `${backendUrl}/items/search?name=${query}`
+          `${__API_URL__}/items/search?name=${query}`
         );
         const data = await res.json();
         setItems(data);

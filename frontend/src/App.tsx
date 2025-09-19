@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { MarketplaceView, OptimalItemsView } from "./views";
+import { MarketplaceView, OptimalItemsView, OptimalConsumableView } from "./views";
 
-type ViewType = "search" | "optimal";
+type ViewType = "search" | "equip" | "consumable";
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>("search");
@@ -9,8 +9,10 @@ function App() {
     switch (currentView) {
       case "search":
         return <MarketplaceView />;
-      case "optimal":
+      case "equip":
         return <OptimalItemsView />;
+      case "consumable":
+        return <OptimalConsumableView />;
       default:
         return <MarketplaceView />;
     }
@@ -34,14 +36,24 @@ function App() {
             Search
           </button>
           <button
-            onClick={() => setCurrentView("optimal")}
+            onClick={() => setCurrentView("equip")}
             className={`!bg-[#3F3529] px-6 py-2 rounded-md font-medium transition-colors ${
-              currentView === "optimal"
+              currentView === "equip"
                 ? "!bg-yellow-600 text-white"
                 : "!bg-[#3F3529] text-gray-200 hover:!bg-gray-500"
             }`}
           >
-            Optimal Items
+            Optimal Equipments
+          </button>
+          <button
+            onClick={() => setCurrentView("consumable")}
+            className={`!bg-[#3F3529] px-6 py-2 rounded-md font-medium transition-colors ${
+              currentView === "consumable"
+                ? "!bg-yellow-600 text-white"
+                : "!bg-[#3F3529] text-gray-200 hover:!bg-gray-500"
+            }`}
+          >
+            Optimal Consumables
           </button>
         </div>
       </div>
