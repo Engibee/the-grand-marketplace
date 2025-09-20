@@ -33,6 +33,15 @@ app.use(express.json());
 (async () => {
   try {
     await initDB();
+
+    //INITIAL POPULATE/SCRAPE
+    await populateItems();
+    await populatePrices();
+    await populateVolumes();
+    await scrapeAllSlots();
+    await scrapeAndProcessFood();
+
+    //SCHEDULE FOR WEEKLY UPDATE
     cron.schedule("59 23 * * 3", async () => {
       await populateItems().catch((error) => {
         console.error("❌ Critical error in populating items:", error);
@@ -46,6 +55,7 @@ app.use(express.json());
       console.log("✅ Weekly update completed!");
     });
 
+    //SCHEDULE FOR HOURLY UPDATE
     cron.schedule("0 */3 * * *", async () => {
       await populatePrices();
       await populateVolumes();
