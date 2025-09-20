@@ -1,5 +1,4 @@
 function OptimalConsumableView(){
-    console.log("Hello world.");
     return (
         <div>
             <h1>Optimal Consumables</h1>
