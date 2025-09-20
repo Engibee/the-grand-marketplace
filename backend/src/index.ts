@@ -2,14 +2,17 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
+import cron from "node-cron";
 import { fileURLToPath } from "url";
 import itemsRouter from "./routes/items.js";
 import optimalRouter from "./routes/optimal.js";
+import consumablesRouter from "./routes/consumables.js";
 import { initDB } from "./db/initDB.js";
 import { populateItems } from "./db/populateItems.js";
 import { populatePrices } from "./db/populatePrices.js";
 import { populateVolumes } from "./db/populateVolumes.js";
-import { scrapeAllSlots, scrapeSlots } from "./scraping/scrapeEquipment.js";
+import { scrapeAllSlots } from "./scraping/scrapeEquipment.js";
+import { scrapeAndProcessFood } from "./scraping/scrapeConsumable.js";
 import type { Application } from "express";
 
 // Get __dirname equivalent in ES modules
@@ -30,12 +33,25 @@ app.use(express.json());
 (async () => {
   try {
     await initDB();
-    await populateItems();
-    await populatePrices();
-    await populateVolumes();
-    await scrapeAllSlots().catch((error) => {
-      console.error("❌ Critical error in scraping process:", error);
+    cron.schedule("59 23 * * 3", async () => {
+      await populateItems().catch((error) => {
+        console.error("❌ Critical error in populating items:", error);
+      });
+      await scrapeAllSlots().catch((error) => {
+        console.error("❌ Critical error in scraping process:", error);
+      });
+      await scrapeAndProcessFood().catch((error) => {
+        console.error("❌ Critical error in food scraping process:", error);
+      });
+      console.log("✅ Weekly update completed!");
     });
+
+    cron.schedule("0 */3 * * *", async () => {
+      await populatePrices();
+      await populateVolumes();
+      console.log("✅ Hourly update completed!");
+    });
+
     app.use(express.json());
     app.use("/items", itemsRouter);
 
@@ -52,6 +68,8 @@ app.use(express.json());
 app.use("/items", itemsRouter);
 
 app.use("/optimal", optimalRouter);
+
+app.use("/consumables", consumablesRouter);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);

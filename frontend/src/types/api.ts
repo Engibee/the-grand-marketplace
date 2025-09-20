@@ -52,3 +52,33 @@ export interface SlotEquipment {
   slot: string;
   items: EquipmentItem[];
 }
+
+// Consumable effect with efficiency calculation
+export interface ConsumableEffect {
+  skill: string;
+  amount: number;
+  efficiency: number | null;
+  amount_per_bite: number;
+}
+
+// Consumable item from the /consumables endpoint
+export interface Consumable {
+  item_id: number;
+  item_name: string;
+  current_price: string;
+  effects: {
+    [effect_type: string]: ConsumableEffect;
+  };
+  bites: number;
+}
+
+// Top healing food from /consumables/healing/top endpoint
+export interface TopHealingFood {
+  item_id: number;
+  item_name: string;
+  current_price: string;
+  healing: number;
+  bites: number;
+  healing_per_gp: number;
+  healing_per_bite: number;
+}

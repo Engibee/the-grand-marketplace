@@ -140,7 +140,7 @@ function OptimalItemsView() {
     <div>
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-yellow-500 mb-4">
-          Most Cost-Efficient Equipment by Slot
+          ⚔️ Most Cost-Efficient Equipment by Slot
         </h2>
         <p className="text-gray-300 mb-4">
           Top 5 most cost-efficient items for each equipment slot, sorted by {attributes.find(a => a.key === selectedAttribute)?.label} efficiency.
@@ -154,7 +154,7 @@ function OptimalItemsView() {
           <select
             value={selectedAttribute}
             onChange={(e) => setSelectedAttribute(e.target.value)}
-            className="bg-gray-800 border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+            className="bg-[#332B21] border border-gray-600 text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
           >
             {attributes.map(attr => (
               <option key={attr.key} value={attr.key}>
@@ -172,7 +172,7 @@ function OptimalItemsView() {
       ) : slotEquipments.length > 0 ? (
         <div className="space-y-8">
           {slotEquipments.map(slotGroup => (
-            <div key={slotGroup.slot} className="bg-gray-800 rounded-lg p-6">
+            <div key={slotGroup.slot} className="bg-[#332B21] rounded-lg p-6">
               <h3 className="text-xl font-bold text-yellow-400 mb-4 border-b border-gray-600 pb-2">
                 {slotGroup.slot} Slot
               </h3>
@@ -184,7 +184,7 @@ function OptimalItemsView() {
                   const value = attribute?.value;
 
                   return (
-                    <div key={item.item_id} className="bg-gray-700 rounded-lg p-4 border border-gray-600 hover:border-yellow-500 transition-colors">
+                    <div key={item.item_id} className="bg-[#3F3529] rounded-lg p-4 border border-gray-600 hover:border-yellow-500 transition-colors">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-bold text-yellow-400">#{index + 1}</span>
                         <span className="text-xs text-gray-400">{formatPrice(item.current_price)}</span>
