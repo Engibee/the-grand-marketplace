@@ -3,13 +3,13 @@ import { pool } from "./initDB.js";
 
 export async function populateItems() {
   try {
-    console.log("📡 Buscando itens da API externa...");
+    console.log("📡 Searching for items data...");
 
     const response = await fetch("https://grandexchange.tools/api/items");
     const data = await response.json();
 
     if (!data.items || !Array.isArray(data.items)) {
-      throw new Error("Formato inesperado da API externa");
+      throw new Error("Unexpected data format");
     }
 
     const client = await pool.connect();
@@ -42,9 +42,9 @@ export async function populateItems() {
     }
 
     client.release();
-    console.log("✅ Itens estáticos populados/atualizados no banco!");
+    console.log("✅ Static items data populated/updated successfully.");
   } catch (err) {
-    console.error("❌ Erro ao popular itens:", err);
+    console.error("❌ Error populating items:", err);
   }
 }
 

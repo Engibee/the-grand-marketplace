@@ -13,13 +13,7 @@ import {
   getItemName
 } from './puppeteerHelper.js';
 
-// What we want to scrape from each food item
-interface FoodItem {
-  name: string;
-  healing: number;
-  bites?: number;
-  delayedHeal?: number;
-}
+import type { FoodItem } from '../models/index.js';
 
 /**
  * Scrape food items from the OSRS wiki food page

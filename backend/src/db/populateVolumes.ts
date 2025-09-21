@@ -1,24 +1,21 @@
 import fetch from "node-fetch";
 import { pool } from "./initDB.js";
+import type { VolumeItem } from '../models/index.js';
 
 export async function populateVolumes() {
   try {
-    console.log("⏳ Buscando volumes dos itens...");
+    console.log("⏳ Searching for items volumes...");
 
     const response = await fetch("https://grandexchange.tools/api/volumes");
     if (!response.ok) {
-      throw new Error(`Erro na API externa: ${response.status}`);
+      throw new Error(`External API error: ${response.status}`);
     }
 
     const data = await response.json();
 
     const client = await pool.connect();
 
-    interface VolumeItem {
-      id: number;
-      name: string;
-      volume: number;
-    }
+
 
     // transforma em array e filtra itens válidos
     const items = Object.values(data).filter(
@@ -42,9 +39,9 @@ export async function populateVolumes() {
       client.release();
     }
 
-    console.log("✅ Volumes dos itens atualizados com sucesso.");
+    console.log("✅ Items volumes populated/updated successfully.");
   } catch (error) {
-    console.error("❌ Erro ao popular volumes:", error);
+    console.error("❌ Error populating volumes:", error);
   }
 }
 

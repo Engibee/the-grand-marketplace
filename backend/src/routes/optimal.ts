@@ -1,6 +1,7 @@
 import express from "express";
 const router = express.Router();
 import { pool } from "../db/initDB.js";
+import { VALID_EQUIPMENT_ATTRIBUTES } from "../models/index.js";
 
 // Get top 5 equipment per slot for specific attribute (optimized)
 router.get("/equipments/:attribute", async (req: express.Request, res: express.Response) => {
@@ -8,13 +9,7 @@ router.get("/equipments/:attribute", async (req: express.Request, res: express.R
     const { attribute } = req.params;
 
     // Validate attribute
-    const validAttributes = [
-      'melee_strength', 'ranged_strength', 'magic_damage', 'stab_acc', 'slash_acc',
-      'crush_acc', 'magic_acc', 'ranged_acc', 'stab_def', 'slash_def', 'crush_def',
-      'magic_def', 'ranged_def', 'prayer_bonus'
-    ];
-
-    if (!attribute || !validAttributes.includes(attribute)) {
+    if (!attribute || !VALID_EQUIPMENT_ATTRIBUTES.includes(attribute as any)) {
       return res.status(400).json({ error: "Invalid attribute" });
     }
 

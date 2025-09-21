@@ -69,12 +69,12 @@ app.use(express.json());
       console.log(`Database running on port: ${PORTDB}`);
     });
   } catch (err) {
-    console.error("Erro ao iniciar o DB:", err);
+    console.error("Error starting database:", err);
     process.exit(1);
   }
 })();
 
-// Routes
+//Routes
 app.use("/items", itemsRouter);
 
 app.use("/optimal", optimalRouter);

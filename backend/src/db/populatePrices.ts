@@ -3,12 +3,12 @@ import { pool } from "./initDB.js";
 
 export async function populatePrices() {
   try {
-    console.log("⏳ Buscando preços dos itens...");
+    console.log("⏳ Searching for items prices...");
 
     // 🔹 1. Buscar dados da API externa
     const response = await fetch("https://grandexchange.tools/api/prices");
     if (!response.ok) {
-      throw new Error(`Erro na API externa: ${response.status}`);
+      throw new Error(`External API error: ${response.status}`);
     }
 
     const data: any[] = await response.json();
@@ -41,9 +41,9 @@ export async function populatePrices() {
       client.release();
     }
 
-    console.log("✅ Preços dos itens populados/atualizados com sucesso.");
+    console.log("✅ Items prices populated/updated successfully.");
   } catch (error) {
-    console.error("❌ Erro ao popular preços:", error);
+    console.error("❌ Error populating prices:", error);
   }
 }   
 

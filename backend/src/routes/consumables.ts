@@ -1,63 +1,13 @@
 import express from "express";
 const router = express.Router();
 import { pool } from "../db/initDB.js";
+import { isValidEffectType, validateRequiredParam } from "../utils/index.js";
+import { ConsumableService } from "../services/ConsumableService.js";
 
 // Get all consumables with their attributes and efficiency calculations
 router.get("/", async (req: express.Request, res: express.Response) => {
   try {
-    const result = await pool.query(`
-      SELECT
-        ca.item_id,
-        i.name as item_name,
-        p.current_price,
-        ca.effect_type,
-        ca.skill,
-        ca.amount,
-        ca.bites
-      FROM consumable_attributes ca
-      JOIN items i ON ca.item_id = i.id
-      LEFT JOIN item_prices p ON ca.item_id = p.item_id
-      WHERE p.current_price IS NOT NULL AND p.current_price > 0
-      ORDER BY i.name, ca.effect_type
-    `);
-
-    // Group by item and calculate efficiency
-    const consumablesMap = new Map();
-
-    result.rows.forEach(row => {
-      const itemId = row.item_id;
-      const price = parseFloat(row.current_price) || 0;
-
-      if (!consumablesMap.has(itemId)) {
-        consumablesMap.set(itemId, {
-          item_id: itemId,
-          item_name: row.item_name,
-          current_price: row.current_price,
-          effects: {},
-          bites: row.bites
-        });
-      }
-
-      const item = consumablesMap.get(itemId);
-      const amount = parseFloat(row.amount) || 0;
-
-      // Calculate efficiency (healing per gp)
-      const calculateEfficiency = (value: number) => {
-        return price > 0 && value > 0 
-          ? Math.round((value / price) * 1000000) / 1000000 
-          : null;
-      };
-
-      // Add effect with efficiency calculation
-      item.effects[row.effect_type] = {
-        skill: row.skill,
-        amount: amount,
-        efficiency: calculateEfficiency(amount),
-        amount_per_bite: row.bites > 0 ? Math.round((amount / row.bites) * 100) / 100 : amount
-      };
-    });
-
-    const consumables = Array.from(consumablesMap.values());
+    const consumables = await ConsumableService.getAllConsumables();
     res.json(consumables);
   } catch (err) {
     console.error("Error fetching consumables:", err);
@@ -70,9 +20,7 @@ router.get("/effect/:effectType", async (req: express.Request, res: express.Resp
   try {
     const { effectType } = req.params;
 
-    const validEffectTypes = ['heal', 'delayed_heal', 'boost', 'restore'];
-    
-    if (!effectType || !validEffectTypes.includes(effectType)) {
+    if (!effectType || !isValidEffectType(effectType)) {
       return res.status(400).json({ error: "Invalid effect type" });
     }
 
@@ -109,36 +57,9 @@ router.get("/effect/:effectType", async (req: express.Request, res: express.Resp
 // Get top healing foods (most efficient healing per gp)
 router.get("/healing/top", async (req: express.Request, res: express.Response) => {
   try {
-    const limit = parseInt(req.query.limit as string) || 10;
-
-    const result = await pool.query(`
-      SELECT
-        ca.item_id,
-        i.name as item_name,
-        p.current_price,
-        ca.amount as healing,
-        ca.bites,
-        CASE
-          WHEN p.current_price > 0 AND ca.amount > 0
-          THEN ca.amount::float / p.current_price
-          ELSE 0
-        END as healing_per_gp,
-        CASE
-          WHEN ca.bites > 0
-          THEN ca.amount::float / ca.bites
-          ELSE ca.amount
-        END as healing_per_bite
-      FROM consumable_attributes ca
-      JOIN items i ON ca.item_id = i.id
-      LEFT JOIN item_prices p ON ca.item_id = p.item_id
-      WHERE ca.effect_type = 'heal'
-        AND p.current_price IS NOT NULL AND p.current_price > 0
-        AND ca.amount > 0
-      ORDER BY healing_per_gp DESC
-      LIMIT $1
-    `, [limit]);
-
-    res.json(result.rows);
+    const limit = parseInt(req.query.limit as string) || 20;
+    const healingFoods = await ConsumableService.getTopHealingFoods(limit);
+    res.json(healingFoods);
   } catch (error) {
     console.error("Error fetching top healing foods:", error);
     res.status(500).json({ error: "Failed to fetch top healing foods" });

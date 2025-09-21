@@ -14,11 +14,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 console.log("✅ Modules loaded successfully!");
 
-// Equipment slot configurations
-interface SlotConfig {
-  name: string;
-  url: string;
-}
+import type { SlotConfig, ScrapedEquipmentData } from '../models/index.js';
 
 const SLOT_CONFIGS: Record<string, SlotConfig> = {
   ammunition: {
@@ -204,27 +200,7 @@ async function scrapeWithPuppeteer(slotConfig: SlotConfig): Promise<ScrapedEquip
   return scrapedData as ScrapedEquipmentData[];
 }
 
-interface ScrapedEquipmentData {
-  itemName: string; // Used for matching with items table
-  matchedId?: number; // The ID from items table after matching
-  stab_acc: number | null;
-  slash_acc: number | null;
-  crush_acc: number | null;
-  magic_acc: number | null;
-  ranged_acc: number | null;
-  stab_def: number | null;
-  slash_def: number | null;
-  crush_def: number | null;
-  magic_def: number | null;
-  ranged_def: number | null;
-  melee_strength: number | null;
-  ranged_strength: number | null;
-  magic_damage: number | null;
-  prayer_bonus: number | null;
-  weight: number | null;
-  speed?: number | null; // Optional for weapons
-  slot: string;
-}
+
 
 
 
