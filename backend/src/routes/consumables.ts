@@ -2,7 +2,7 @@ import express from "express";
 const router = express.Router();
 import { pool } from "../db/initDB.js";
 import { isValidEffectType, validateRequiredParam } from "../utils/index.js";
-import { ConsumableService } from "../services/ConsumableService.js";
+import { ConsumableService } from "../services/index.js";
 
 // Get all consumables with their attributes and efficiency calculations
 router.get("/", async (req: express.Request, res: express.Response) => {
@@ -24,30 +24,8 @@ router.get("/effect/:effectType", async (req: express.Request, res: express.Resp
       return res.status(400).json({ error: "Invalid effect type" });
     }
 
-    const result = await pool.query(`
-      SELECT
-        ca.item_id,
-        i.name as item_name,
-        p.current_price,
-        ca.effect_type,
-        ca.skill,
-        ca.amount,
-        ca.bites,
-        CASE
-          WHEN p.current_price > 0 AND ca.amount > 0
-          THEN ca.amount::float / p.current_price
-          ELSE 0
-        END as efficiency
-      FROM consumable_attributes ca
-      JOIN items i ON ca.item_id = i.id
-      LEFT JOIN item_prices p ON ca.item_id = p.item_id
-      WHERE ca.effect_type = $1
-        AND p.current_price IS NOT NULL AND p.current_price > 0
-        AND ca.amount > 0
-      ORDER BY efficiency DESC
-    `, [effectType]);
-
-    res.json(result.rows);
+    const consumables = await ConsumableService.getConsumablesByEffectType(effectType);
+    res.json(consumables);
   } catch (error) {
     console.error("Error fetching consumables by effect type:", error);
     res.status(500).json({ error: "Failed to fetch consumables data" });

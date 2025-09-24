@@ -1,11 +1,11 @@
 import express from "express";
 const router = express.Router();
-import { pool } from "../db/initDB.js";
+import { ItemService } from "../services/index.js";
 
 router.get("/", async (req: express.Request, res: express.Response) => {
   try {
-    const result = await pool.query("SELECT * FROM items");
-    res.json(result.rows);
+    const items = await ItemService.getAllItems();
+    res.json(items);
   } catch (err) {
     console.error("Erro ao buscar items:", err);
     res.status(500).json({ error: "Erro ao buscar items" });
@@ -14,12 +14,8 @@ router.get("/", async (req: express.Request, res: express.Response) => {
 
 router.get("/prices", async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT i.id, i.name, p.current_price, p.current_trend, p.volume, p.today_price, p.today_trend, p.fetched_at
-      FROM item_prices p
-      JOIN items i ON i.id = p.item_id
-    `);
-    res.json(result.rows);
+    const itemsWithPrices = await ItemService.getAllItemsWithPrices();
+    res.json(itemsWithPrices);
   } catch (err) {
     console.error("Error while fetching prices:", err);
     res.status(500).json({ error: "Error while fetching prices." });
@@ -34,36 +30,57 @@ router.get("/search", async (req: express.Request, res: express.Response) => {
       return res.status(400).json({ error: "Query param 'name' é obrigatório" });
     }
 
-    // Busca com case-insensitive
-    const result = await pool.query(
-      `
-      SELECT 
-        i.id,
-        i.name,
-        i.members,
-        i.max_limit,
-        i.value,
-        i.highalch,
-        i.lowalch,
-        i.icon,
-        p.current_price,
-        p.current_trend,
-        p.volume,
-        p.today_price,
-        p.today_trend,
-        p.fetched_at
-      FROM items i
-      LEFT JOIN item_prices p ON i.id = p.item_id
-      WHERE LOWER(i.name) LIKE LOWER($1)
-      ORDER BY i.name ASC
-      `,
-      [`%${name}%`]
-    );
-
-    return res.json(result.rows);
+    const items = await ItemService.searchItemsByName(name);
+    return res.json(items);
   } catch (err) {
     console.error("❌ Error while fetching items:", err);
     return res.status(500).json({ error: "Internal server error." });
+  }
+});
+
+// Get item by ID
+router.get("/:id", async (req: express.Request, res: express.Response) => {
+  try {
+    const itemId = parseInt(req.params.id || "");
+
+    if (isNaN(itemId)) {
+      return res.status(400).json({ error: "Invalid item ID" });
+    }
+
+    const item = await ItemService.getItemById(itemId);
+
+    if (!item) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+
+    res.json(item);
+  } catch (err) {
+    console.error("Error fetching item:", err);
+    res.status(500).json({ error: "Internal server error." });
+  }
+});
+
+// Get most expensive items
+router.get("/analytics/expensive", async (req: express.Request, res: express.Response) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 10;
+    const items = await ItemService.getMostExpensiveItems(limit);
+    res.json(items);
+  } catch (err) {
+    console.error("Error fetching expensive items:", err);
+    res.status(500).json({ error: "Internal server error." });
+  }
+});
+
+// Get most traded items
+router.get("/analytics/traded", async (req: express.Request, res: express.Response) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 10;
+    const items = await ItemService.getMostTradedItems(limit);
+    res.json(items);
+  } catch (err) {
+    console.error("Error fetching most traded items:", err);
+    res.status(500).json({ error: "Internal server error." });
   }
 });
 
