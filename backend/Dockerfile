@@ -1,8 +1,10 @@
 # Use Node.js with Chrome dependencies for Puppeteer
 FROM node:18
 
-# Install Chrome dependencies for Puppeteer
+# Install Chromium and dependencies for Puppeteer
 RUN apt-get update && apt-get install -y \
+    chromium \
+    chromium-sandbox \
     wget \
     gnupg \
     ca-certificates \
@@ -36,6 +38,9 @@ RUN apt-get update && apt-get install -y \
     libxcb1 \
     xdg-utils \
     && rm -rf /var/lib/apt/lists/*
+
+# Set Puppeteer to use system Chromium
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # Create app directory
 WORKDIR /app

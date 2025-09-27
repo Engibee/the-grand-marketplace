@@ -38,22 +38,36 @@ app.use(express.json());
     await populateItems();
     await populatePrices();
     await populateVolumes();
-    await scrapeAllSlots();
-    await scrapeAndProcessFood();
 
-    //SCHEDULE FOR WEEKLY UPDATE
-    cron.schedule("59 23 * * 3", async () => {
-      await populateItems().catch((error) => {
-        console.error("❌ Critical error in populating items:", error);
-      });
+    // Only run scraping if not disabled by environment variable
+    const disableScraping = process.env.DISABLE_SCRAPING === 'true';
+    if (!disableScraping) {
+      console.log("🕷️ Starting initial scraping process...");
       await scrapeAllSlots().catch((error) => {
-        console.error("❌ Critical error in scraping process:", error);
+        console.error("❌ Initial scraping failed, but continuing with server startup:", error);
       });
       await scrapeAndProcessFood().catch((error) => {
-        console.error("❌ Critical error in food scraping process:", error);
+        console.error("❌ Initial food scraping failed, but continuing with server startup:", error);
       });
-      console.log("✅ Weekly update completed!");
-    });
+    } else {
+      console.log("⏭️ Scraping disabled by DISABLE_SCRAPING environment variable");
+    }
+
+    //SCHEDULE FOR WEEKLY UPDATE
+    if (!disableScraping) {
+      cron.schedule("59 23 * * 3", async () => {
+        await populateItems().catch((error) => {
+          console.error("❌ Critical error in populating items:", error);
+        });
+        await scrapeAllSlots().catch((error) => {
+          console.error("❌ Critical error in scraping process:", error);
+        });
+        await scrapeAndProcessFood().catch((error) => {
+          console.error("❌ Critical error in food scraping process:", error);
+        });
+        console.log("✅ Weekly update completed!");
+      });
+    }
 
     //SCHEDULE FOR HOURLY UPDATE
     cron.schedule("0 */3 * * *", async () => {

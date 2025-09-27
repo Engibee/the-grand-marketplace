@@ -67,17 +67,20 @@ const SLOT_CONFIGS: Record<string, SlotConfig> = {
   }
 };
 
-async function scrapeWithPuppeteer(slotConfig: SlotConfig): Promise<ScrapedEquipmentData[]> {
-  console.log(`🚀 Starting scrapeWithPuppeteer function for ${slotConfig.name} slot...`);
+async function scrapeWithPuppeteer(slotConfig: SlotConfig, retryCount = 0): Promise<ScrapedEquipmentData[]> {
+  const maxRetries = 3;
+  console.log(`🚀 Starting scrapeWithPuppeteer function for ${slotConfig.name} slot... (attempt ${retryCount + 1}/${maxRetries + 1})`);
   console.log("Launching Chrome browser...");
 
   // Detect if running in Docker/Linux container vs local development
   const isDocker = process.env.NODE_ENV === 'production' || process.platform === 'linux';
 
-  const browserOptions = {
+  const browserOptions: any = {
     headless: true,
+    // Increase timeout for resource-constrained environments like Render
+    timeout: 60000, // 60 seconds instead of default 30
     args: isDocker ? [
-      // Linux/Docker specific args
+      // Linux/Docker specific args - optimized for Render
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
@@ -85,7 +88,16 @@ async function scrapeWithPuppeteer(slotConfig: SlotConfig): Promise<ScrapedEquip
       '--no-first-run',
       '--no-zygote',
       '--single-process',
-      '--disable-gpu'
+      '--disable-gpu',
+      '--memory-pressure-off',
+      '--max_old_space_size=4096',
+      '--disable-extensions',
+      '--disable-plugins',
+      '--disable-background-timer-throttling',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-renderer-backgrounding',
+      '--disable-features=TranslateUI',
+      '--disable-ipc-flooding-protection'
     ] : [
       // Windows/macOS development args
       '--disable-dev-shm-usage',
@@ -94,16 +106,29 @@ async function scrapeWithPuppeteer(slotConfig: SlotConfig): Promise<ScrapedEquip
     ]
   };
 
+  // Use system Chromium in Docker/production
+  if (isDocker) {
+    browserOptions.executablePath = '/usr/bin/chromium';
+  }
+
   console.log(`🔧 Browser config: ${isDocker ? 'Docker/Linux' : 'Local development'}`);
   const browser = await puppeteer.launch(browserOptions);
 
   const page = await browser.newPage();
 
+  // Set page timeouts for slow connections
+  page.setDefaultNavigationTimeout(60000); // 60 seconds
+  page.setDefaultTimeout(60000); // 60 seconds
+
   // Set a realistic Chrome user agent
   await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
   console.log("Navigating to:", slotConfig.url);
-  await page.goto(slotConfig.url, { waitUntil: 'networkidle2' });
+  // Use more lenient wait conditions for slow environments
+  await page.goto(slotConfig.url, {
+    waitUntil: 'domcontentloaded', // Less strict than 'networkidle2'
+    timeout: 60000 // 60 seconds timeout
+  });
 
   console.log("Page loaded, extracting table data...");
 
@@ -334,6 +359,33 @@ async function matchItemsWithDatabase(scrapedData: ScrapedEquipmentData[]): Prom
   return matchedItems;
 }
 
+// Wrapper function with retry logic for scraping
+async function scrapeWithRetry(slotConfig: SlotConfig): Promise<ScrapedEquipmentData[]> {
+  const maxRetries = 3;
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`🔄 Attempt ${attempt + 1}/${maxRetries + 1} for ${slotConfig.name} slot`);
+      const result = await scrapeWithPuppeteer(slotConfig, attempt);
+      console.log(`✅ Successfully scraped ${slotConfig.name} slot on attempt ${attempt + 1}`);
+      return result;
+    } catch (error) {
+      lastError = error as Error;
+      console.error(`❌ Attempt ${attempt + 1} failed for ${slotConfig.name} slot:`, error);
+
+      if (attempt < maxRetries) {
+        const waitTime = Math.min(5000 * Math.pow(2, attempt), 30000); // Exponential backoff, max 30s
+        console.log(`⏳ Waiting ${waitTime/1000}s before retry...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+    }
+  }
+
+  console.error(`💥 All ${maxRetries + 1} attempts failed for ${slotConfig.name} slot. Last error:`, lastError);
+  throw lastError || new Error(`Failed to scrape ${slotConfig.name} after ${maxRetries + 1} attempts`);
+}
+
 export async function scrapeSlots(slotType: string): Promise<number[]> {
   const slotConfig = SLOT_CONFIGS[slotType];
   if (!slotConfig) {
@@ -344,7 +396,7 @@ export async function scrapeSlots(slotType: string): Promise<number[]> {
 
   try {
     console.log(`🎯 Starting ${slotConfig.name} slot scraping process...`);
-    const scrapedData = await scrapeWithPuppeteer(slotConfig);
+    const scrapedData = await scrapeWithRetry(slotConfig);
 
     if (scrapedData.length > 0) {
       console.log(`Successfully scraped ${scrapedData.length} ${slotConfig.name.toLowerCase()} items from the wiki.`);

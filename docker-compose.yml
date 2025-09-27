@@ -50,7 +50,12 @@ services:
       - osrs_network
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        API_URL: ${API_URL:-http://localhost:3001}
+        BACKEND_PORT: ${BACKEND_PORT:-3001}
+        FRONTEND_PORT: ${FRONTEND_PORT:-5173}
     container_name: osrs_frontend
     restart: always
     ports:
