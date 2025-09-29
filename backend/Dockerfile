@@ -5,6 +5,7 @@ FROM node:18
 RUN apt-get update && apt-get install -y \
     chromium \
     chromium-sandbox \
+    curl \
     wget \
     gnupg \
     ca-certificates \

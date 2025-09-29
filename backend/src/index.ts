@@ -23,7 +23,6 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 const app: Application = express();
-const PORTDB = process.env.PORT || 3000;
 const PORT = 3001;
 
 // Middlewares
@@ -76,12 +75,6 @@ app.use(express.json());
       console.log("✅ Hourly update completed!");
     });
 
-    app.use(express.json());
-    app.use("/items", itemsRouter);
-
-    app.listen(PORT, () => {
-      console.log(`Database running on port: ${PORTDB}`);
-    });
   } catch (err) {
     console.error("Error starting database:", err);
     process.exit(1);
@@ -89,10 +82,17 @@ app.use(express.json());
 })();
 
 //Routes
+// Health check endpoint (lightweight, no DB dependency)
+app.get("/health", (_req, res) => {
+  res.status(200).json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 app.use("/items", itemsRouter);
-
 app.use("/optimal", optimalRouter);
-
 app.use("/consumables", consumablesRouter);
 
 app.listen(PORT, () => {
